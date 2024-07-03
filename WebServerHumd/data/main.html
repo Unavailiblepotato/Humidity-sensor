@@ -1,0 +1,26 @@
+<!DOCTYPE HTML><html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="fav.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Humidity and temperature</h2>
+  <p>
+    <img src="temp.png" style="width:50px;height:50px;">
+    <span id="temperature">%TEMPERATURE%</span>
+    <sup class="units">&deg;F</sup>
+  </p>
+  <p>
+    <img src="humd.png" style="width:50px;height:50px;">
+    <span id="humidity">%HUMIDITY%</span>
+    <sup class="units">&percnt;</sup>
+  </p>
+  <div>
+    <canvas id="myChart"></canvas>
+  </div>
+</body>
+<script src="chart.js"></script>
+<script src="javascript.js"></script>
+
+</html>
