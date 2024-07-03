@@ -1,6 +1,6 @@
 #include <esp_now.h>
 #include <WiFi.h>
-uint8_t lmKey[16] = {7, 2, 8, 4, 5, 6, 1, 0, 9, 0, 11, 6, 15, 8, 2, 16};
+
 
 // Structure example to receive data
 // Must match the sender structure
