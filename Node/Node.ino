@@ -1,7 +1,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <DHTesp.h>
-#define DHTpin 15
+#include <Adafruit_AHTX0.h>
 
 // REPLACE WITH YOUR RECEIVER MAC Address
 uint8_t broadcastAddress[] = {0xe4, 0x65, 0xb8, 0xd9, 0x0c, 0x9c};
@@ -9,9 +9,8 @@ DHTesp dht;
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
-  int a;
-  float b;
-  float c;
+float a;
+float b;
 };
 struct_message myData;
 
@@ -21,11 +20,18 @@ esp_now_peer_info_t peerInfo;
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
+
+
+Adafruit_AHTX0 aht;
  
 void setup() {
-  dht.setup(DHTpin, DHTesp::DHT11);
-  // Init Serial Monitor
   Serial.begin(115200);
+
+  if (! aht.begin()) {
+    Serial.println("Could not find AHT? Check wiring");
+    while (1) delay(10);
+  }
+  Serial.println("AHT10 or AHT20 found");
  
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
@@ -55,13 +61,11 @@ void setup() {
 }
  
 void loop() {
-  float humidity = dht.getHumidity();
-  float temperature = dht.getTemperature();
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
   // Set values to send
-  myData.a = 101;
-  myData.b = humidity;
-  myData.c = temperature;
-  
+  myData.b = temp.temperature;
+  myData.a = humidity.relative_humidity;
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
    
