@@ -1,11 +1,19 @@
 #include <esp_now.h>
 #include <WiFi.h>
+#include "Queue.h"
 
+typedef struct board{
+  int board;
+  uint8_t macs[6];
+}board;
+
+
+board node;
 
 // Structure example to receive data
 // Must match the sender structure
 typedef struct struct_message {
-    int board;
+    int boardNum;
     float humd;
     float temp;
 
@@ -13,13 +21,42 @@ typedef struct struct_message {
 // Create a struct_message called Data
 struct_message Data;
 
+Queue<board> nodeQ(20);
+
+int getBoardNum(const uint8_t *mac){
+  
+  int finNum = 0;
+
+  for(int i = nodeQ.count(); i > 0; i--)
+  {
+    board t = nodeQ.peek();
+    nodeQ.pop();
+    if (memcmp(t.macs, mac, 6) == 0) {  // Compare MAC addresses
+      finNum = t.board;
+    }
+    nodeQ.push(t);
+  }
+  if(finNum == 0){
+    node.board = 100 + (nodeQ.count()+1);
+    memcpy(node.macs, mac, 6);
+    nodeQ.push(node);
+    return(node.board);
+  }
+
+  return finNum;
+
+}
 
 
 // callback function that will be executed when Data is received
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   memcpy(&Data, incomingData, sizeof(Data));
-  Serial2.print("n:");Serial2.print(Data.board);Serial2.print("h:");Serial2.print(Data.humd);Serial2.print("t:");Serial2.print(Data.temp);
 
+  
+  Data.boardNum = getBoardNum(mac);
+  Serial2.print("n:");Serial2.print(Data.boardNum);Serial2.print("h:");Serial2.print(Data.humd);Serial2.print("t:");Serial2.print(Data.temp);
+  
+/*
   if(Data.board == 1){
       Serial.print("temp1:");Serial.print(((Data.temp * 9) + 3) / 5 + 32);Serial.print(",");
       Serial.print("humd1:");Serial.print(Data.humd);Serial.print("\n");\
@@ -29,7 +66,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
       Serial.print("temp2:");Serial.print(((Data.temp * 9) + 3) / 5 + 32);Serial.print(",");
       Serial.print("humd2:");Serial.print(Data.humd);Serial.print("\n");
     }
-    
+    */
 }
  
 void setup() {
