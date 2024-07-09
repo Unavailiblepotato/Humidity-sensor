@@ -1,92 +1,125 @@
 #include <esp_now.h>
 #include <WiFi.h>
-#include "Queue.h"
+#include <Wire.h>
 
-typedef struct board{
-  int board;
+typedef struct board {
+  int boardNum;
   uint8_t macs[6];
-}board;
+  bool init = false;
+} board;
 
-
+const int maxBoards = 20;
 board node;
 
 // Structure example to receive data
 // Must match the sender structure
 typedef struct struct_message {
-    int boardNum;
-    float humd;
-    float temp;
-
+  uint8_t macaddrs[6];
+  float humd;
+  float temp;
 } struct_message;
+
 // Create a struct_message called Data
 struct_message Data;
 
-Queue<board> nodeQ(20);
+typedef struct BoardData {
+  float humd;
+  int boardNum;
+  float temp;
+  bool init;
+} BoardData;
 
-int getBoardNum(const uint8_t *mac){
-  
-  int finNum = 0;
+typedef struct sendboards {
+  BoardData Datas[20];
+} sendboards;
 
-  for(int i = nodeQ.count(); i > 0; i--)
-  {
-    board t = nodeQ.peek();
-    nodeQ.pop();
-    if (memcmp(t.macs, mac, 6) == 0) {  // Compare MAC addresses
-      finNum = t.board;
+sendboards finData;
+board boards[maxBoards];
+
+int getBoardNum(const uint8_t *mac) {
+  // Check if the first board is initialized
+  if (!boards[0].init) {
+    memcpy(boards[0].macs, mac, 6);
+    boards[0].boardNum = 101;
+    boards[0].init = true;
+    return 101;
+  }
+
+  // Iterate through the boards array
+  for (int i = 0; i < maxBoards; i++) {
+    if (boards[i].init) {
+      // Compare MAC addresses
+      if (memcmp(boards[i].macs, mac, 6) == 0) {
+        Serial.print("Existing board number: ");
+        Serial.println(boards[i].boardNum);
+        return boards[i].boardNum;
+      }
+    } else {
+      // Initialize a new board
+      memcpy(boards[i].macs, mac, 6);
+      boards[i].boardNum = (i == 0) ? 101 : boards[i-1].boardNum + 1;
+      boards[i].init = true;
+      Serial.print("Creating new board number: ");
+      Serial.println(boards[i].boardNum);
+      return boards[i].boardNum;
     }
-    nodeQ.push(t);
-  }
-  if(finNum == 0){
-    node.board = 100 + (nodeQ.count()+1);
-    memcpy(node.macs, mac, 6);
-    nodeQ.push(node);
-    return(node.board);
   }
 
-  return finNum;
-
+  // If we reach this point, it means we have run out of space in the boards array
+  Serial.println("No available slots for new boards");
+  return -1;  // Indicate an error
 }
-
 
 // callback function that will be executed when Data is received
-void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
-  memcpy(&Data, incomingData, sizeof(Data));
-
-  
-  Data.boardNum = getBoardNum(mac);
-  Serial2.print("n:");Serial2.print(Data.boardNum);Serial2.print("h:");Serial2.print(Data.humd);Serial2.print("t:");Serial2.print(Data.temp);
-  
-/*
-  if(Data.board == 1){
-      Serial.print("temp1:");Serial.print(((Data.temp * 9) + 3) / 5 + 32);Serial.print(",");
-      Serial.print("humd1:");Serial.print(Data.humd);Serial.print("\n");\
-      
+void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
+  if (len == sizeof(struct_message)) {
+    memcpy(&Data, incomingData, sizeof(Data));
+    int bn = (getBoardNum(Data.macaddrs) - 100);
+    if (bn >= 0 && bn < 20) {
+      finData.Datas[bn].humd = Data.humd;
+      finData.Datas[bn].temp = Data.temp;
+      finData.Datas[bn].boardNum = bn + 101;
+      finData.Datas[bn].init = true;
+      Serial.print("Received data from board: ");
+      Serial.print(finData.Datas[bn].boardNum);
+      Serial.print(" Humidity: ");
+      Serial.print(finData.Datas[bn].humd);
+      Serial.print(" Temperature: ");
+      Serial.println(finData.Datas[bn].temp);
     }
-  if(Data.board == 2){
-      Serial.print("temp2:");Serial.print(((Data.temp * 9) + 3) / 5 + 32);Serial.print(",");
-      Serial.print("humd2:");Serial.print(Data.humd);Serial.print("\n");
-    }
-    */
+  }
 }
- 
+
+void sendData_i2c() {
+  Wire.beginTransmission(9);  // Address of the I2C slave
+  Wire.write((byte*)&finData, sizeof(finData));
+  Wire.endTransmission();
+  Serial.println("Data sent over I2C");
+}
+
+unsigned long prevUpdateTime = 0;
+unsigned long updateInterval = 10000;
+
 void setup() {
   // Initialize Serial Monitor
   Serial.begin(115200);
+  Wire.begin();
   WiFi.mode(WIFI_STA);
 
-  
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  // Once ESPNow is successfully Init, we will register for recv CB to
-  // get recv packer info
-  esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
+  // Register callback function for receiving data
+  esp_now_register_recv_cb(OnDataRecv);
+
   Serial2.begin(9600, SERIAL_8N1, 16, 17); // Using GPIO16 as RX and GPIO17 as TX
   Serial2.print("model, humidity, temp");
 }
- 
+
 void loop() {
-
-
+  if (millis() - prevUpdateTime >= updateInterval) {
+    prevUpdateTime = millis();
+    sendData_i2c();
+  }
 }
