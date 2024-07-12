@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humidity and Temperature Dashboard</title>
+    <link href="fav.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class = "card">
+      <img src="logo_mark.svg">
+      <h2 class = "titles">Humidity and Temperature Dashboard</h2>
+    </div>
+
+    <div id="node-cards"></div>
+
+    <div class="container">
+        
+        <div id="buttons-container">
+            <button id="toggle-all-btn" class="btn">Select All</button>
+        </div>
+
+
+
+        <div class="chart-container">
+            <div class="chart-wrapper">
+                <canvas id="humidityChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="javascript.js"></script>
+    <script src="/material.min.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 #include <esp_wifi.h>
 
 // REPLACE WITH YOUR RECEIVER MAC Address
-uint8_t broadcastAddress[] = {0xe4, 0x65, 0xb8, 0xd9, 0x0c, 0x9c};
+uint8_t broadcastAddress[] = {0xd0, 0xef, 0x76, 0x13, 0xc1, 0x9c};
 DHTesp dht;
 // Structure example to send data
 // Must match the receiver structure
