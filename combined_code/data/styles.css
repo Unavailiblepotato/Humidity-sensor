@@ -14,7 +14,7 @@ body {
 
 h2 {
   text-align: center;
-  color: #1c244f;
+  margin-bottom: 20px;
 }
 
 /* Chart styles */
@@ -38,32 +38,33 @@ canvas {
 }
 
 /* Card styles */
-#node-cards {
+.node-cards-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  gap: 10px; /* Adjust the gap between cards */
+  margin-top: 20px; /* Space above node cards */
 }
 
 .card {
-  width: calc(25% - 20px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 25px;
+  background-color: #fff;
+  padding: 20px;
   margin: 10px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: inline-block; /* Make the card fit its content */
 }
 
 .card-content {
   padding: 15px;
 }
 
-.titles{
-  display:inline-block;
-  color:#1c244f
+.titles {
+  display: inline-block;
+  color: #1c244f;
 }
 
 .card-title {
-  font-size: 1.2em;
-  font-weight: bold;
+  font-size: 1.5em;
   margin-bottom: 10px;
 }
 
@@ -75,6 +76,9 @@ canvas {
 }
 
 .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: #f7921e;
   color: white;
   border: none;
@@ -84,6 +88,7 @@ canvas {
   font-size: 16px;
   border-radius: 5px;
   transition: background-color 0.3s ease;
+  text-align: center;
 }
 
 .btn:hover, .btn.selected {
@@ -93,7 +98,7 @@ canvas {
 /* Responsive design */
 @media (max-width: 1000px) {
   .chart-container {
-    flex-direction: row;
+    flex-direction: column;
   }
 
   .chart-wrapper {
@@ -102,12 +107,12 @@ canvas {
   }
 
   .card {
-    width: calc(50% - 20px);
+    flex: 1 1 auto;
   }
 }
 
 @media (max-width: 480px) {
   .card {
-    width: 100%;
+    flex: 1 1 100%;
   }
 }

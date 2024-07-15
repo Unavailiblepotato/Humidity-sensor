@@ -28,8 +28,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     display: true,
                     text: 'Humidity Over Time'
                 },
-                tootlip: {
-                    mode: 'index'
+                tooltip: {
+                    mode: 'index',
+                    interesect: "false"
                 }
             }
         }
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: {
                     title: {
                         display: true,
-                        text: 'Temperature (&degF)'
+                        text: 'Temperature (°F)'
                     }
                 }
             },
@@ -61,8 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     display: true,
                     text: 'Temperature Over Time'
                 },
-                tootlip: {
-                    mode: 'index'
+                tooltip: {
+                    mode: 'index',
+                    interesect: "false"
                 }
             }
         }
@@ -107,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const temperatureDatasets = [];
                 const nodeCardsContainer = document.getElementById('node-cards');
                 const buttonsContainer = document.getElementById('buttons-container');
-                
+
                 if (!nodeCardsContainer || !buttonsContainer) {
                     console.error('Required containers not found in the DOM.');
                     return;
@@ -138,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="card-content">
                                 <span class="card-title">${node}</span>
                                 <p>Humidity: ${data[node].humidity[data[node].humidity.length - 1].toFixed(2)}%</p>
-                                <p>Temperature: ${data[node].temperature[data[node].temperature.length - 1].toFixed(2)}&deg;F</p>
+                                <p>Temperature: ${data[node].temperature[data[node].temperature.length - 1].toFixed(2)}°F</p>
                             </div>
                         `;
                         nodeCardsContainer.appendChild(card);
@@ -173,11 +175,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 humidityChart.update();
                 temperatureChart.update();
                 updateToggleAllButton();
+
+                document.getElementById('toggle-all-btn').onclick = toggleAllNodes;
             })
             .catch(error => console.error('Error updating charts:', error));
     }
-
-    document.getElementById('toggle-all-btn').onclick = toggleAllNodes;
 
     updateCharts();
     setInterval(updateCharts, 10000);

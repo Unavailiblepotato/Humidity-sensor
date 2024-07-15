@@ -13,12 +13,14 @@ AsyncWebServer server(80);
 // Data structures
 const int maxNodes = 20;
 const int maxDataPoints = 100;
+const unsigned long inactivityThreshold = 10000; // 60 seconds threshold for inactivity
 
 typedef struct BoardData {
   int boardNum;
   float temp;
   float humd;
   bool active;
+  unsigned long lastUpdateTime;
   uint8_t macAddress[6];
 } BoardData;
 
@@ -36,7 +38,8 @@ typedef struct struct_message {
 
 // Function prototypes
 void initDataPoints();
-void updateDataPoints(int node);
+void updateDataPoints(int node, bool resetData);
+void checkInactiveNodes();
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len);
 String processor(const String& var);
 void setupWiFi();
@@ -60,8 +63,8 @@ void setup() {
 }
 
 void loop() {
-  // The main functionality is now handled by callbacks and the web server
-  delay(10);
+  checkInactiveNodes();
+  delay(1000); // Check every 1 seconds
 }
 
 void initDataPoints() {
@@ -69,6 +72,7 @@ void initDataPoints() {
   for (int i = 0; i < maxNodes; i++) {
     nodeData[i].boardNum = 0;
     nodeData[i].active = false;
+    nodeData[i].lastUpdateTime = 0;
     for (int j = 0; j < maxDataPoints; j++) {
       humidityData[i][j] = 0;
       temperatureData[i][j] = 0;
@@ -78,18 +82,36 @@ void initDataPoints() {
   Serial.println("Data points initialized.");
 }
 
-void updateDataPoints(int node) {
+void updateDataPoints(int node, bool resetData) {
   float humidity = nodeData[node].humd;
   float temperature = nodeData[node].temp;
 
   if (!isnan(humidity) && !isnan(temperature)) {
-    humidityData[node][dataIndex[node]] = humidity;
-    temperatureData[node][dataIndex[node]] = temperature;
-    dataIndex[node] = (dataIndex[node] + 1) % maxDataPoints;
+    if (resetData) {
+      for (int j = 0; j < maxDataPoints; j++) {
+        humidityData[node][j] = humidity;
+        temperatureData[node][j] = temperature;
+      }
+    } else {
+      humidityData[node][dataIndex[node]] = humidity;
+      temperatureData[node][dataIndex[node]] = temperature;
+      dataIndex[node] = (dataIndex[node] + 1) % maxDataPoints;
+    }
+    nodeData[node].lastUpdateTime = millis(); // Update the last update time
     Serial.printf("Updated data points for node %d: Humidity=%.2f, Temperature=%.2f\n", 
                   node, humidity, temperature);
   } else {
     Serial.println("Received invalid data. Skipping update.");
+  }
+}
+
+void checkInactiveNodes() {
+  unsigned long currentTime = millis();
+  for (int i = 0; i < maxNodes; i++) {
+    if (nodeData[i].active && (currentTime - nodeData[i].lastUpdateTime > inactivityThreshold)) {
+      nodeData[i].active = false;
+      Serial.printf("Node %d has been set to inactive due to inactivity\n", nodeData[i].boardNum);
+    }
   }
 }
 
@@ -107,13 +129,15 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
     }
     
     if (nodeIndex != -1) {
+      bool isNewNode = !nodeData[nodeIndex].active;
       nodeData[nodeIndex].boardNum = nodeIndex + 101;
       nodeData[nodeIndex].temp = data->temp;
       nodeData[nodeIndex].humd = data->humd;
       nodeData[nodeIndex].active = true;
+      nodeData[nodeIndex].lastUpdateTime = millis(); // Set the last update time
       memcpy(nodeData[nodeIndex].macAddress, data->macAddress, 6);
       
-      updateDataPoints(nodeIndex);
+      updateDataPoints(nodeIndex, isNewNode);
       
       Serial.printf("Received data from board %d: Humidity=%.2f, Temperature=%.2f\n", 
                     nodeData[nodeIndex].boardNum, nodeData[nodeIndex].humd, nodeData[nodeIndex].temp);
@@ -195,8 +219,14 @@ void setupWebServer() {
         JsonArray humidityArray = node.createNestedArray("humidity");
         JsonArray temperatureArray = node.createNestedArray("temperature");
         for (int j = 0; j < maxDataPoints; j++) {
-          humidityArray.add(humidityData[i][(dataIndex[i] + j) % maxDataPoints]);
-          temperatureArray.add((temperatureData[i][(dataIndex[i] + j) % maxDataPoints] * 9.0 / 5.0) + 32.0);
+          float humidityValue = humidityData[i][(dataIndex[i] + j) % maxDataPoints];
+          float temperatureValue = temperatureData[i][(dataIndex[i] + j) % maxDataPoints];
+          if (humidityValue != 0) {
+            humidityArray.add(humidityValue);
+          }
+          if (temperatureValue != 0) {
+            temperatureArray.add((temperatureValue * 9.0 / 5.0) + 32.0);
+          }
         }
       }
     }

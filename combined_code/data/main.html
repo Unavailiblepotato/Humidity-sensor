@@ -9,35 +9,27 @@
     <script src="chart.js"></script>
 </head>
 <body>
+  <div class="card">
+  <img src="logo_mark.svg">
+  <h2 class = "titles">Humidity and Temperature Dashboard</h2>
+  </div>
   <div class="container">
-    <div class = "card">
-      <img src="logo_mark.svg">
-      <h2 class = "titles">Humidity and Temperature Dashboard</h2>
+    <div id="buttons-container">
+        <button id="toggle-all-btn" class="btn">Select All</button>
     </div>
-
-    <div id="node-cards"></div>
-
-    <div class="container">
-        
-        <div id="buttons-container">
-            <button id="toggle-all-btn" class="btn">Select All</button>
+    <div id="node-cards" class="node-cards-container"></div>
+  </div>
+  <div class="container">
+    <div class="chart-container">
+        <div class="chart-wrapper">
+            <canvas id="humidityChart"></canvas>
         </div>
-
-
-
-        <div class="chart-container">
-            <div class="chart-wrapper">
-                <canvas id="humidityChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="temperatureChart"></canvas>
-            </div>
+        <div class="chart-wrapper">
+            <canvas id="temperatureChart"></canvas>
         </div>
-
-
     </div>
-
-    <script src="javascript.js"></script>
-    <script src="/material.min.js"></script>
+  </div>
+  <script src="javascript.js"></script>
+  <script src="/material.min.js"></script>
 </body>
 </html>
